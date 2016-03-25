@@ -22,5 +22,5 @@ isAtivo: false
 1 - Realizar o pedido utilizando uma requisição HTTP POST, pra ter mais segurança.
 2 - Montar um Json Schema para o request e um para o response
 
-
-
+#Considerações
+Pessoal, fiz tudo em cerca de 2 horas, então provavelmente o código não está dos melhores, quem quiser contribuir, só mandar bala.
