@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using NetCoders.Redtube.WebApi.Models;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,27 +7,30 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
+using System.Web.Http.Cors;
 
 namespace NetCoders.Redtube.WebApi.Controllers
 {
+    [EnableCors("*", "*", "*")]
     public class LoginController : ApiController
     {
         [HttpGet]
         public async Task<HttpResponseMessage> Login(string usuario, string senha)
         {
+            //link pro redtube
             String url = "http://www.redtube.com";
 
-            var client = new HttpClient();
+            //criando o client pra realizar a requisição http
+            var client = new HttpClient() 
+            {
+                //Aqui eu seto o endereço base(o que vier depois é complemento)
+                BaseAddress =  new Uri(url)
+            };
 
-            client.BaseAddress = new Uri(url);
 
-            var request = new HttpRequestMessage(HttpMethod.Post, "/logout");
+            await Logout(client);
 
-            var resposta = await client.SendAsync(request);
-
-            var teste = await resposta.Content.ReadAsStringAsync();
-
-            request = new HttpRequestMessage(HttpMethod.Post, "/htmllogin");
+            var request = new HttpRequestMessage(HttpMethod.Post, "/htmllogin");
 
             var keyValues = new List<KeyValuePair<string, string>>();
 
@@ -45,7 +49,7 @@ namespace NetCoders.Redtube.WebApi.Controllers
 
             if (contains)
             {
-                return Request.CreateResponse(HttpStatusCode.Unauthorized, "Falha ao realizar login.");
+                return Request.CreateResponse(HttpStatusCode.Unauthorized, "Oops, Usuário e/ou senha incorretos.");
             }
 
             else
@@ -53,9 +57,26 @@ namespace NetCoders.Redtube.WebApi.Controllers
                 var objeto = content.Split('(',')');
                 var json = JObject.Parse(objeto[1]);
 
-                return Request.CreateResponse(HttpStatusCode.OK, json);
+                var retorno = new User() 
+                { 
+                    Codigo = Convert.ToInt32(json["iUserID"]),
+                    isAtivo = Convert.ToBoolean(json["isConfirmed"]),
+                    UrlAvatar = json["sAvatar"].ToString(),
+                    Usuario = json["sUsername"].ToString()
+                };
+
+                return Request.CreateResponse(HttpStatusCode.OK, retorno);
             }
 
+        }
+
+        private async Task Logout(HttpClient client_)
+        {
+            //Aqui eu escolho o verbo que vou utilizar e a página, no caso, vou fazer logout, pra quando eu tentar fazer o login
+            //não correr o risco de já estar logado e ele dar um falso positivo
+            var request = new HttpRequestMessage(HttpMethod.Post, "/logout");
+
+            await client_.SendAsync(request);
         }
     }
 }
